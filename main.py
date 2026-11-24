@@ -1,29 +1,29 @@
-"""Alien review line: audit checks stream, then write output copy."""
-import json
+"""Alien field notes, beamed home as one line."""
 import os
 
-OUT_ENV = "MAKEFUN_OUTPUT_DIR"
-BOUND = 200
+NOTE = ("Beautiful planet, four stars. The dominant species taught its "
+        "rocks to speak, then mostly uses them for pictures of lunch. "
+        "Would recommend to neighbors.")
+LOG = "aln2"
+PLANET = "earth"
+RATING = "four-stars"
+NEXT = "jupiter"
 
 
-def audit(text):
-    yield ("length_ok", 1 <= len(text) <= BOUND)
-    yield ("not_blank", bool(text.strip()))
+def beam(base):
+    base = base or "output"
+    os.makedirs(base, exist_ok=True)
+    p = os.path.join(base, "entry.txt")
+    draft = p + ".draft"
+    with open(draft, "w", encoding="utf-8", newline="\n") as f:
+        f.write(NOTE + "\n")
+    os.replace(draft, p)
+    with open(p, encoding="utf-8") as f:
+        got = f.read()
+    assert got == NOTE + "\n", "signal degraded"
+    return got.strip()
 
 
-def run():
-    with open("entry.txt", encoding="utf-8") as fh:
-        src = fh.read().strip()
-    flags = dict(audit(src))
-    if not all(flags.values()):
-        raise SystemExit(json.dumps({"flags": flags, "text": src}))
-    root = os.environ.get(OUT_ENV) or "/output"
-    os.makedirs(root, exist_ok=True)
-    path = os.path.join(root, "entry.txt")
-    with open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write(src)
-    return json.dumps({"verdict": "pass", "chars": len(src), "path": path})
-
-
-if __name__ == "__main__":
-    print(run())
+logged = beam(os.environ.get("MAKEFUN_OUTPUT_DIR"))
+print(LOG, PLANET, RATING, len(logged), "chars beamed")
+print("next stop:", NEXT, "packing light")
